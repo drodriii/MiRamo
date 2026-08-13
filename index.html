@@ -104,6 +104,179 @@
         .texto-aprobado { color: #1e7b4c; font-weight: bold; }
         .texto-reprobado { color: #b22234; font-weight: bold; }
         .texto-pendiente { color: #b8860b; font-weight: bold; }
+
+        /* ============================================================
+   MEDIA QUERIES PARA DISPOSITIVOS MÓVILES
+   ============================================================ */
+
+/* Pantallas hasta 768px (tablets y móviles grandes) */
+@media (max-width: 768px) {
+    .container {
+        padding: 18px 15px;
+    }
+    h1 {
+        font-size: 1.4rem;
+    }
+    h2 {
+        font-size: 1rem;
+    }
+    .row {
+        gap: 12px;
+    }
+    .col {
+        min-width: 100%;
+        flex: 1 1 100%;
+    }
+    .checkbox-group {
+        gap: 12px;
+    }
+    .ramo-selector {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    .ramo-selector select {
+        width: 100%;
+    }
+    .ramo-selector .btn {
+        width: 100%;
+        text-align: center;
+    }
+    .flex-between {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 8px;
+    }
+    .botones-accion {
+        justify-content: center;
+    }
+    .eval-item {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    .eval-item input,
+    .eval-item .input-group {
+        width: 100%;
+        flex: 1 1 auto;
+        min-width: unset;
+    }
+    .eval-item .input-group {
+        max-width: 100%;
+    }
+    .eval-item .btn-danger {
+        align-self: flex-end;
+        margin-top: 4px;
+    }
+    .examen-row {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    .examen-row .input-group {
+        width: 100%;
+    }
+    .resumen-box .resumen-header {
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+    }
+    .nota-final {
+        font-size: 1.6rem;
+    }
+    .aprobacion-box {
+        max-width: 100%;
+    }
+    .component-card {
+        padding: 12px 14px;
+    }
+    .suma-eval-pct {
+        text-align: left;
+        margin-top: 6px;
+    }
+    .examen-info p {
+        font-size: 0.9rem;
+    }
+}
+
+/* Pantallas muy pequeñas (hasta 480px) */
+@media (max-width: 480px) {
+    .container {
+        padding: 12px 10px;
+        border-radius: 12px;
+    }
+    h1 {
+        font-size: 1.2rem;
+        margin-bottom: 12px;
+    }
+    h2 {
+        font-size: 0.95rem;
+        margin-bottom: 10px;
+    }
+    .btn {
+        font-size: 0.8rem;
+        padding: 6px 12px;
+    }
+    .btn-sm {
+        font-size: 0.7rem;
+        padding: 4px 10px;
+    }
+    input[type="text"],
+    input[type="number"] {
+        font-size: 0.9rem;
+        padding: 6px 8px;
+    }
+    .input-group input {
+        font-size: 0.9rem;
+        padding: 6px 4px 6px 8px;
+    }
+    .input-group .suffix {
+        font-size: 0.8rem;
+        padding-right: 6px;
+    }
+    .badge {
+        font-size: 0.65rem;
+        padding: 1px 8px;
+    }
+    .resumen-box {
+        padding: 12px 14px;
+    }
+    .nota-final {
+        font-size: 1.4rem;
+    }
+    .estado-indicador {
+        font-size: 1.2rem;
+    }
+    .component-card {
+        padding: 10px 12px;
+        margin-top: 12px;
+    }
+    .eval-item {
+        padding: 6px 8px;
+        gap: 6px;
+    }
+    .eval-item input {
+        font-size: 0.85rem;
+        padding: 4px 6px;
+    }
+    .eval-item .input-group input {
+        padding: 4px 2px 4px 6px;
+        font-size: 0.85rem;
+    }
+    .examen-section {
+        padding: 10px 12px;
+    }
+    .examen-section h3 {
+        font-size: 0.95rem;
+    }
+    .suma-porcentajes {
+        font-size: 0.8rem;
+    }
+    .aprobacion-box label {
+        font-size: 0.75rem;
+    }
+    .ramo-selector select {
+        font-size: 0.85rem;
+        padding: 6px 8px;
+    }
+}
     </style>
 </head>
 <body>
