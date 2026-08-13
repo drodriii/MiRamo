@@ -1,0 +1,851 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Calculadora de Notas</title>
+    <style>
+        * { box-sizing: border-box; font-family: "Trebuchet MS", "Lucida Grande", "Lucida Sans Unicode", "Lucida Sans", Tahoma, sans-serif; margin: 0; }
+        body { background: #f0f2f5; display: flex; justify-content: center; padding: 30px 15px; }
+        .container { max-width: 950px; width: 100%; background: #fff; padding: 25px 28px; border-radius: 18px; box-shadow: 0 4px 12px rgba(0,0,0,0.06); }
+        h1 { font-size: 1.6rem; font-weight: 600; color: #1a2639; margin-bottom: 20px; letter-spacing: -0.5px; }
+        h2 { font-size: 1.1rem; font-weight: 600; color: #2c3e50; margin-bottom: 15px; }
+        
+        .step { display: none; }
+        .step.active { display: block; }
+
+        .btn { background: #1e2f4e; color: white; border: none; padding: 8px 18px; border-radius: 8px; font-weight: 600; font-size: 0.9rem; cursor: pointer; transition: .2s; }
+        .btn:hover { background: #14233b; }
+        .btn-secondary { background: #6b7a8f; }
+        .btn-secondary:hover { background: #556376; }
+        .btn-danger { background: #b22234; padding: 4px 12px; font-size: 0.8rem; }
+        .btn-danger:hover { background: #8b1a1c; }
+        .btn-sm { padding: 4px 14px; font-size: 0.8rem; }
+        .btn-success { background: #1e7b4c; }
+        .btn-success:hover { background: #145a37; }
+        .btn-warning { background: #b8860b; color: white; }
+        .btn-warning:hover { background: #8f6e08; }
+
+        .row { display: flex; flex-wrap: wrap; gap: 18px; align-items: end; }
+        .col { flex: 1; min-width: 120px; }
+        .flex-between { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; }
+        .mt-20 { margin-top: 20px; }
+        .mb-10 { margin-bottom: 10px; }
+        .mb-5 { margin-bottom: 5px; }
+
+        label { font-weight: 500; font-size: 0.85rem; color: #3d4f60; display: block; margin-bottom: 4px; }
+        input[type="text"], input[type="number"] { width: 100%; padding: 8px 10px; border: 1px solid #d0d7de; border-radius: 8px; font-size: 0.95rem; background: #fafbfc; outline: none; transition: .15s; }
+        input:focus { border-color: #1e2f4e; background: #fff; box-shadow: 0 0 0 3px rgba(30, 47, 78, 0.1); }
+
+        .input-group { display: flex; align-items: center; background: #fafbfc; border: 1px solid #d0d7de; border-radius: 8px; overflow: hidden; transition: .15s; }
+        .input-group:focus-within { border-color: #1e2f4e; box-shadow: 0 0 0 3px rgba(30, 47, 78, 0.1); background: #fff; }
+        .input-group input { border: none; padding: 8px 4px 8px 12px; flex: 1; min-width: 40px; background: transparent; outline: none; font-size: 0.95rem; text-align: right; }
+        .input-group .suffix { padding-right: 10px; font-weight: 600; color: #4a5a6e; font-size: 0.9rem; background: transparent; pointer-events: none; }
+
+        .input-group.porcentaje-sufijo input { padding-right: 2px; min-width: 35px; }
+        .input-group.porcentaje-sufijo .suffix { padding-left: 0; }
+
+        .checkbox-group { display: flex; gap: 22px; flex-wrap: wrap; margin-top: 4px; }
+        .checkbox-group label { font-weight: 400; display: flex; align-items: center; gap: 6px; cursor: pointer; }
+
+        /* --- Tarjetas de evaluaciones --- */
+        .component-card { background: #f8f9fb; border-radius: 12px; padding: 16px 18px; margin-top: 16px; border: 2px solid #e9ecf0; transition: border-color 0.3s; }
+        .component-card.incompleto { border-color: #f1c40f; background: #fffdf0; }
+        .component-card h3 { font-size: 1rem; margin: 0; color: #1a2639; }
+        .badge { background: #dce3ed; color: #1a2b4a; padding: 2px 12px; border-radius: 30px; font-size: 0.75rem; font-weight: 600; }
+
+        .eval-item { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; background: #fff; padding: 8px 12px; border-radius: 8px; margin-bottom: 6px; border: 1px solid #e9ecf0; }
+        .eval-item input { flex: 1; min-width: 70px; padding: 6px 8px; border: 1px solid #dde1e6; border-radius: 6px; font-size: 0.9rem; background: #fff; }
+        .eval-item .input-group { flex: 0 1 90px; min-width: 70px; }
+        .eval-item .input-group input { padding: 6px 2px 6px 8px; min-width: 30px; text-align: right; }
+        .eval-item .input-group .suffix { padding-right: 8px; }
+
+        /* --- Resumen --- */
+        .resumen-box { background: #eef3fa; padding: 16px 20px; border-radius: 12px; margin: 20px 0; }
+        .resumen-box .resumen-header { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; }
+        .resumen-box .resumen-detalle { margin-top: 8px; text-align: left; }
+        .resumen-box .resumen-detalle p { margin: 4px 0; font-size: 0.95rem; }
+        .nota-final { font-size: 2rem; font-weight: 700; color: #0f1e33; }
+        .nota-final.aprobado { color: #1e7b4c; }
+        .nota-final.reprobado { color: #b22234; }
+        .estado-indicador { font-size: 1.5rem; margin-left: 8px; vertical-align: middle; }
+        .error { color: #b22234; font-weight: 600; font-size: 0.9rem; }
+        .ok { color: #1e7b4c; font-weight: 600; }
+        .hidden { display: none; }
+
+        .suma-porcentajes { margin-top: 6px; font-size: 0.9rem; font-weight: 500; }
+        .suma-porcentajes span { font-weight: 700; }
+
+        .titulo-centrado { text-align: center; }
+
+        .aprobacion-box { max-width: 200px; margin: 8px auto 0; text-align: center; }
+        .aprobacion-box label { text-align: center; }
+        .aprobacion-box .input-group { justify-content: center; }
+        .aprobacion-box .input-group input { text-align: center; }
+
+        .botones-accion { display: flex; gap: 12px; }
+
+        .suma-eval-pct { margin-top: 8px; font-size: 0.85rem; font-weight: 500; text-align: right; }
+        .suma-eval-pct span { font-weight: 700; }
+
+        /* ---- Selector de ramos ---- */
+        .ramo-selector { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-bottom: 15px; }
+        .ramo-selector select { padding: 8px 12px; border-radius: 8px; border: 1px solid #d0d7de; background: #fafbfc; font-size: 0.95rem; flex: 1; min-width: 150px; }
+        .ramo-selector .btn { font-size: 0.8rem; }
+
+        /* ---- Examen ---- */
+        .examen-section { background: #f0f7ff; border: 1px dashed #2a4b7c; border-radius: 12px; padding: 15px; margin-top: 16px; }
+        .examen-section h3 { margin: 0 0 8px 0; color: #1a2b4a; }
+        .examen-row { display: flex; flex-wrap: wrap; gap: 15px; align-items: center; }
+        .examen-row .input-group { flex: 1; min-width: 120px; }
+        .nota-necesaria { font-weight: 600; color: #b8860b; }
+        .examen-info { background: #fff; padding: 10px; border-radius: 8px; margin-top: 8px; }
+        .examen-info p { margin: 4px 0; }
+        .texto-aprobado { color: #1e7b4c; font-weight: bold; }
+        .texto-reprobado { color: #b22234; font-weight: bold; }
+        .texto-pendiente { color: #b8860b; font-weight: bold; }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h1>Calculadora</h1>
+
+    <!-- ====== PASO 1 ====== -->
+    <div id="step1" class="step active">
+        <h2>Configuración</h2>
+
+        <!-- Selector de ramos (sin botón cargar, cambio automático) -->
+        <div class="ramo-selector">
+            <select id="selectorRamos"></select>
+            <button class="btn btn-sm btn-danger" id="btnEliminarRamo">Eliminar</button>
+            <button class="btn btn-sm btn-success" id="btnNuevoRamo">Nuevo</button>
+        </div>
+
+        <div class="mb-10">
+            <label>Nombre del ramo</label>
+            <input type="text" id="ramoNombre" placeholder="Ej: Cálculo I" />
+        </div>
+
+        <div class="mb-10">
+            <label>Componentes</label>
+            <div class="checkbox-group">
+                <label><input type="checkbox" id="chkCatedra" checked> Cátedra</label>
+                <label><input type="checkbox" id="chkLaboratorio"> Laboratorio</label>
+                <label><input type="checkbox" id="chkTerreno"> Terreno</label>
+            </div>
+        </div>
+
+        <div class="mt-20">
+            <h2 class="titulo-centrado">Ponderación</h2>
+            <div class="row" id="porcentajesContainer">
+                <div class="col" id="porcCatedraGroup">
+                    <label>Cátedra</label>
+                    <div class="input-group porcentaje-sufijo"><input type="number" id="porcCatedra" value="70" min="0" max="100" step="0.1" /><span class="suffix">%</span></div>
+                </div>
+                <div class="col hidden" id="porcLaboratorioGroup">
+                    <label>Laboratorio</label>
+                    <div class="input-group porcentaje-sufijo"><input type="number" id="porcLaboratorio" value="30" min="0" max="100" step="0.1" /><span class="suffix">%</span></div>
+                </div>
+                <div class="col hidden" id="porcTerrenoGroup">
+                    <label>Terreno</label>
+                    <div class="input-group porcentaje-sufijo"><input type="number" id="porcTerreno" value="0" min="0" max="100" step="0.1" /><span class="suffix">%</span></div>
+                </div>
+            </div>
+            <div id="sumaPorcentajes" class="suma-porcentajes" style="text-align:center;">Total: <span id="sumaTotal">100</span>%</div>
+            <p id="porcentajeError" class="error hidden" style="text-align:center;"></p>
+
+            <div style="display: flex; flex-wrap: wrap; gap: 20px; justify-content: center; margin-top: 10px;">
+                <div class="aprobacion-box" style="max-width: 180px;">
+                    <label>Nota de aprobación</label>
+                    <div class="input-group"><input type="number" id="notaAprobacion" value="5.5" step="0.1" min="1" max="7" /><span class="suffix" style="padding-right:10px;"></span></div>
+                </div>
+                <div class="aprobacion-box" style="max-width: 180px;">
+                    <label>Nota mínima con examen</label>
+                    <div class="input-group"><input type="number" id="notaMinimaExamen" value="4.0" step="0.1" min="1" max="7" /><span class="suffix" style="padding-right:10px;"></span></div>
+                </div>
+            </div>
+        </div>
+
+        <button class="btn" id="btnConfigurar" style="margin-top:15px;">Siguiente</button>
+    </div>
+
+    <!-- ====== PASO 2 ====== -->
+    <div id="step2" class="step">
+        <div class="flex-between">
+            <h2>Evaluaciones</h2>
+            <div class="botones-accion">
+                <button class="btn btn-secondary btn-sm" id="btnVolverConfig">Atrás</button>
+                <button class="btn btn-secondary btn-sm" id="btnLimpiarDatos">Reiniciar</button>
+            </div>
+        </div>
+        <p style="font-weight:500; margin-bottom:10px;" id="displayRamoNombre">Ramo</p>
+        <div id="componentsContainer"></div>
+
+        <!-- Sección de examen -->
+        <div id="examenSection" class="examen-section hidden">
+            <div class="flex-between">
+                <h3>Examen (30% de la nota final)</h3>
+                <span class="badge" id="examenEstado">Sin nota</span>
+            </div>
+            <div class="examen-info" id="examenInfo">
+                <p><strong>Nota actual de componentes:</strong> <span id="notaComponentesActual">-</span></p>
+                <p><strong>Nota necesaria en examen para aprobar (≥ <span id="notaMinExamenDisplay">4.0</span>):</strong> <span id="notaNecesariaExamen" class="nota-necesaria">-</span></p>
+            </div>
+            <div class="examen-row">
+                <div class="input-group" style="flex:1;">
+                    <input type="number" id="notaExamen" placeholder="Nota examen" step="0.1" min="0" max="10" />
+                    <span class="suffix">/10</span>
+                </div>
+                <div style="flex:1;">
+                    <span id="examenResultado"></span>
+                </div>
+            </div>
+        </div>
+
+        <div class="resumen-box">
+            <div class="resumen-header">
+                <strong>Resumen</strong>
+                <span style="font-size:1.2rem;">
+                    Nota Final: <span class="nota-final" id="notaFinal">-</span>
+                    <span id="estadoIndicador" class="estado-indicador"></span>
+                </span>
+            </div>
+            <div class="resumen-detalle" id="resumenDetalle"></div>
+        </div>
+    </div>
+</div>
+
+<script>
+// ============================================================
+//  JAVASCRIPT CON MECANISMO DE EXAMEN CORREGIDO Y SIN ÍCONOS
+// ============================================================
+
+// ---- Referencias DOM ----
+const $ = id => document.getElementById(id);
+const chkCatedra = $('chkCatedra'), chkLaboratorio = $('chkLaboratorio'), chkTerreno = $('chkTerreno');
+const porcCatedra = $('porcCatedra'), porcLaboratorio = $('porcLaboratorio'), porcTerreno = $('porcTerreno');
+const porcCatedraGroup = $('porcCatedraGroup'), porcLaboratorioGroup = $('porcLaboratorioGroup'), porcTerrenoGroup = $('porcTerrenoGroup');
+const porcentajeError = $('porcentajeError');
+const sumaTotalSpan = $('sumaTotal');
+const btnConfigurar = $('btnConfigurar'), btnVolverConfig = $('btnVolverConfig'), btnLimpiarDatos = $('btnLimpiarDatos');
+const componentsContainer = $('componentsContainer'), resumenDetalle = $('resumenDetalle'), notaFinalSpan = $('notaFinal');
+const displayRamoNombre = $('displayRamoNombre'), ramoNombreInput = $('ramoNombre');
+const notaAprobacionInput = $('notaAprobacion');
+const notaMinimaExamenInput = $('notaMinimaExamen');
+const step1 = $('step1'), step2 = $('step2');
+const selectorRamos = $('selectorRamos');
+const btnEliminarRamo = $('btnEliminarRamo'), btnNuevoRamo = $('btnNuevoRamo');
+const examenSection = $('examenSection');
+const notaExamenInput = $('notaExamen');
+const examenEstado = $('examenEstado');
+const estadoIndicador = $('estadoIndicador');
+const notaComponentesActual = $('notaComponentesActual');
+const notaNecesariaExamen = $('notaNecesariaExamen');
+const notaMinExamenDisplay = $('notaMinExamenDisplay');
+const examenResultado = $('examenResultado');
+
+// ---- Estado global ----
+let config = {
+    id: null,
+    nombre: '',
+    componentes: {
+        catedra: { activo: true, porcentaje: 70 },
+        laboratorio: { activo: false, porcentaje: 30 },
+        terreno: { activo: false, porcentaje: 0 }
+    },
+    evaluaciones: { catedra: [], laboratorio: [], terreno: [] },
+    notaAprobacion: 5.5,
+    notaMinimaExamen: 4.0,
+    notaExamen: null
+};
+
+let listaRamos = [];
+let ramoActivoId = null;
+
+// ---- Persistencia de lista de ramos ----
+function guardarListaRamos() {
+    localStorage.setItem('lista_ramos', JSON.stringify(listaRamos));
+    localStorage.setItem('ramo_activo_id', ramoActivoId || '');
+}
+
+function cargarListaRamos() {
+    const data = localStorage.getItem('lista_ramos');
+    if (data) {
+        try {
+            listaRamos = JSON.parse(data);
+        } catch(e) { listaRamos = []; }
+    } else {
+        const id = 'ramo_' + Date.now();
+        listaRamos = [{
+            id: id,
+            nombre: 'ramo',
+            componentes: {
+                catedra: { activo: true, porcentaje: 70 },
+                laboratorio: { activo: false, porcentaje: 30 },
+                terreno: { activo: false, porcentaje: 0 }
+            },
+            evaluaciones: { catedra: [], laboratorio: [], terreno: [] },
+            notaAprobacion: 5.5,
+            notaMinimaExamen: 4.0,
+            notaExamen: null
+        }];
+        ramoActivoId = id;
+        guardarListaRamos();
+    }
+    const activo = localStorage.getItem('ramo_activo_id');
+    if (activo && listaRamos.some(r => r.id === activo)) {
+        ramoActivoId = activo;
+    } else if (listaRamos.length > 0) {
+        ramoActivoId = listaRamos[0].id;
+    } else {
+        const id = 'ramo_' + Date.now();
+        listaRamos.push({
+            id: id,
+            nombre: 'Mi ramo',
+            componentes: {
+                catedra: { activo: true, porcentaje: 70 },
+                laboratorio: { activo: false, porcentaje: 30 },
+                terreno: { activo: false, porcentaje: 0 }
+            },
+            evaluaciones: { catedra: [], laboratorio: [], terreno: [] },
+            notaAprobacion: 5.5,
+            notaMinimaExamen: 4.0,
+            notaExamen: null
+        });
+        ramoActivoId = id;
+        guardarListaRamos();
+    }
+    cargarRamoActivo();
+}
+
+function cargarRamoActivo() {
+    const ramo = listaRamos.find(r => r.id === ramoActivoId);
+    if (ramo) {
+        config = JSON.parse(JSON.stringify(ramo));
+        actualizarUIDesdeConfig();
+        if (config.evaluaciones.catedra.length || config.evaluaciones.laboratorio.length || config.evaluaciones.terreno.length) {
+            step1.classList.remove('active');
+            step2.classList.add('active');
+            renderizarEvaluaciones();
+            actualizarResumen();
+            mostrarSeccionExamen();
+        } else {
+            step1.classList.add('active');
+            step2.classList.remove('active');
+        }
+        actualizarSelectorRamos();
+    }
+}
+
+function actualizarUIDesdeConfig() {
+    ramoNombreInput.value = config.nombre || '';
+    chkCatedra.checked = config.componentes.catedra.activo;
+    chkLaboratorio.checked = config.componentes.laboratorio.activo;
+    chkTerreno.checked = config.componentes.terreno.activo;
+    porcCatedra.value = config.componentes.catedra.porcentaje;
+    porcLaboratorio.value = config.componentes.laboratorio.porcentaje;
+    porcTerreno.value = config.componentes.terreno.porcentaje;
+    notaAprobacionInput.value = config.notaAprobacion || 5.5;
+    notaMinimaExamenInput.value = config.notaMinimaExamen || 4.0;
+    notaExamenInput.value = config.notaExamen !== null && config.notaExamen !== undefined ? config.notaExamen : '';
+    actualizarVisibilidad();
+    actualizarSumaYValidar();
+}
+
+function actualizarSelectorRamos() {
+    selectorRamos.innerHTML = '';
+    listaRamos.forEach(ramo => {
+        const opt = document.createElement('option');
+        opt.value = ramo.id;
+        opt.textContent = ramo.nombre || 'Sin nombre';
+        if (ramo.id === ramoActivoId) opt.selected = true;
+        selectorRamos.appendChild(opt);
+    });
+}
+
+// ---- Funciones de ramos ----
+function guardarRamoActual() {
+    config.nombre = ramoNombreInput.value.trim() || 'Ramo';
+    config.componentes.catedra.activo = chkCatedra.checked;
+    config.componentes.catedra.porcentaje = parseFloat(porcCatedra.value) || 0;
+    config.componentes.laboratorio.activo = chkLaboratorio.checked;
+    config.componentes.laboratorio.porcentaje = parseFloat(porcLaboratorio.value) || 0;
+    config.componentes.terreno.activo = chkTerreno.checked;
+    config.componentes.terreno.porcentaje = parseFloat(porcTerreno.value) || 0;
+    config.notaAprobacion = parseFloat(notaAprobacionInput.value) || 5.5;
+    config.notaMinimaExamen = parseFloat(notaMinimaExamenInput.value) || 4.0;
+    // notaExamen se guarda desde el input en el step2
+
+    const idx = listaRamos.findIndex(r => r.id === config.id);
+    if (idx === -1) {
+        config.id = 'ramo_' + Date.now();
+        listaRamos.push(JSON.parse(JSON.stringify(config)));
+    } else {
+        listaRamos[idx] = JSON.parse(JSON.stringify(config));
+    }
+    ramoActivoId = config.id;
+    guardarListaRamos();
+    actualizarSelectorRamos();
+}
+
+function cargarRamoDesdeSelector() {
+    const id = selectorRamos.value;
+    if (!id) return;
+    const ramo = listaRamos.find(r => r.id === id);
+    if (ramo) {
+        ramoActivoId = id;
+        config = JSON.parse(JSON.stringify(ramo));
+        actualizarUIDesdeConfig();
+        if (config.evaluaciones.catedra.length || config.evaluaciones.laboratorio.length || config.evaluaciones.terreno.length) {
+            step1.classList.remove('active');
+            step2.classList.add('active');
+            renderizarEvaluaciones();
+            actualizarResumen();
+            mostrarSeccionExamen();
+        } else {
+            step1.classList.add('active');
+            step2.classList.remove('active');
+        }
+        guardarListaRamos();
+    }
+}
+
+// Evento change del selector: carga automáticamente
+selectorRamos.addEventListener('change', cargarRamoDesdeSelector);
+
+function eliminarRamoActual() {
+    if (!ramoActivoId) return;
+    if (!confirm(`¿Eliminar el ramo "${config.nombre}"?`)) return;
+    listaRamos = listaRamos.filter(r => r.id !== ramoActivoId);
+    if (listaRamos.length === 0) {
+        const id = 'ramo_' + Date.now();
+        listaRamos.push({
+            id: id,
+            nombre: 'Mi ramo',
+            componentes: { catedra: { activo: true, porcentaje: 70 }, laboratorio: { activo: false, porcentaje: 30 }, terreno: { activo: false, porcentaje: 0 } },
+            evaluaciones: { catedra: [], laboratorio: [], terreno: [] },
+            notaAprobacion: 5.5,
+            notaMinimaExamen: 4.0,
+            notaExamen: null
+        });
+        ramoActivoId = id;
+    } else {
+        ramoActivoId = listaRamos[0].id;
+    }
+    guardarListaRamos();
+    cargarRamoActivo();
+}
+
+function nuevoRamo() {
+    const id = 'ramo_' + Date.now();
+    const nuevo = {
+        id: id,
+        nombre: 'Nuevo ramo',
+        componentes: { catedra: { activo: true, porcentaje: 70 }, laboratorio: { activo: false, porcentaje: 30 }, terreno: { activo: false, porcentaje: 0 } },
+        evaluaciones: { catedra: [], laboratorio: [], terreno: [] },
+        notaAprobacion: 5.5,
+        notaMinimaExamen: 4.0,
+        notaExamen: null
+    };
+    listaRamos.push(nuevo);
+    ramoActivoId = id;
+    guardarListaRamos();
+    cargarRamoActivo();
+}
+
+btnEliminarRamo.addEventListener('click', eliminarRamoActual);
+btnNuevoRamo.addEventListener('click', nuevoRamo);
+
+// ---- Otras funciones de UI ----
+function actualizarVisibilidad() {
+    porcCatedraGroup.classList.toggle('hidden', !chkCatedra.checked);
+    porcLaboratorioGroup.classList.toggle('hidden', !chkLaboratorio.checked);
+    porcTerrenoGroup.classList.toggle('hidden', !chkTerreno.checked);
+    if (!chkCatedra.checked) porcCatedra.value = 0;
+    if (!chkLaboratorio.checked) porcLaboratorio.value = 0;
+    if (!chkTerreno.checked) porcTerreno.value = 0;
+    actualizarSumaYValidar();
+}
+
+function actualizarSumaYValidar() {
+    let suma = 0;
+    if (chkCatedra.checked) suma += parseFloat(porcCatedra.value) || 0;
+    if (chkLaboratorio.checked) suma += parseFloat(porcLaboratorio.value) || 0;
+    if (chkTerreno.checked) suma += parseFloat(porcTerreno.value) || 0;
+    sumaTotalSpan.textContent = suma.toFixed(1);
+    const ok = Math.abs(suma - 100) < 0.01;
+    porcentajeError.classList.toggle('hidden', ok);
+    sumaTotalSpan.style.color = ok ? '#1e7b4c' : '#b22234';
+    return ok;
+}
+
+chkCatedra.addEventListener('change', actualizarVisibilidad);
+chkLaboratorio.addEventListener('change', actualizarVisibilidad);
+chkTerreno.addEventListener('change', actualizarVisibilidad);
+document.querySelectorAll('#porcCatedra, #porcLaboratorio, #porcTerreno').forEach(inp => {
+    inp.addEventListener('input', actualizarSumaYValidar);
+});
+
+// ---- Paso 1 -> 2 ----
+btnConfigurar.addEventListener('click', function() {
+    if (!actualizarSumaYValidar() || !porcentajeError.classList.contains('hidden')) {
+        alert("Los porcentajes deben sumar 100");
+        return;
+    }
+    guardarRamoActual();
+    // Actualizar config con los valores actuales
+    config.nombre = ramoNombreInput.value.trim() || 'Ramo';
+    config.componentes.catedra.activo = chkCatedra.checked;
+    config.componentes.catedra.porcentaje = parseFloat(porcCatedra.value) || 0;
+    config.componentes.laboratorio.activo = chkLaboratorio.checked;
+    config.componentes.laboratorio.porcentaje = parseFloat(porcLaboratorio.value) || 0;
+    config.componentes.terreno.activo = chkTerreno.checked;
+    config.componentes.terreno.porcentaje = parseFloat(porcTerreno.value) || 0;
+    config.notaAprobacion = parseFloat(notaAprobacionInput.value) || 5.5;
+    config.notaMinimaExamen = parseFloat(notaMinimaExamenInput.value) || 4.0;
+
+    if (!config.componentes.catedra.activo) config.evaluaciones.catedra = [];
+    if (!config.componentes.laboratorio.activo) config.evaluaciones.laboratorio = [];
+    if (!config.componentes.terreno.activo) config.evaluaciones.terreno = [];
+
+    const idx = listaRamos.findIndex(r => r.id === config.id);
+    if (idx !== -1) {
+        listaRamos[idx] = JSON.parse(JSON.stringify(config));
+        guardarListaRamos();
+    }
+
+    step1.classList.remove('active');
+    step2.classList.add('active');
+    displayRamoNombre.textContent = config.nombre;
+    renderizarEvaluaciones();
+    mostrarSeccionExamen();
+    actualizarResumen();
+});
+
+btnVolverConfig.addEventListener('click', function() {
+    guardarCambiosEvaluaciones();
+    step2.classList.remove('active');
+    step1.classList.add('active');
+    actualizarUIDesdeConfig();
+});
+
+// ---- Guardar cambios de evaluaciones ----
+function guardarCambiosEvaluaciones() {
+    const val = parseFloat(notaExamenInput.value);
+    config.notaExamen = isNaN(val) ? null : val;
+    const idx = listaRamos.findIndex(r => r.id === config.id);
+    if (idx !== -1) {
+        listaRamos[idx].notaExamen = config.notaExamen;
+        guardarListaRamos();
+    }
+}
+
+// ---- Mostrar/ocultar sección examen ----
+function mostrarSeccionExamen() {
+    const notaComp = calcularNotaComponentes();
+    if (notaComp === null) {
+        examenSection.classList.add('hidden');
+        return;
+    }
+    examenSection.classList.remove('hidden');
+    notaMinExamenDisplay.textContent = config.notaMinimaExamen || 4.0;
+    actualizarInfoExamen();
+}
+
+// ---- Calcular nota ponderada de componentes (sin examen) ----
+function calcularNotaComponentes() {
+    let nota = 0;
+    let hay = false;
+    const comps = ['catedra', 'laboratorio', 'terreno'];
+    for (const key of comps) {
+        if (!config.componentes[key].activo) continue;
+        const parcial = calcularParcial(key);
+        if (parcial !== null) {
+            hay = true;
+            const pct = config.componentes[key].porcentaje / 100;
+            nota += parcial * pct;
+        }
+    }
+    return hay ? nota : null;
+}
+
+// ---- Renderizar evaluaciones ----
+function renderizarEvaluaciones() {
+    const comps = ['catedra', 'laboratorio', 'terreno'];
+    const nombres = { catedra: 'Cátedra', laboratorio: 'Laboratorio', terreno: 'Terreno' };
+    let html = '';
+    for (const key of comps) {
+        if (!config.componentes[key].activo) continue;
+        const evals = config.evaluaciones[key] || [];
+        const pct = config.componentes[key].porcentaje;
+        const parcial = calcularParcial(key);
+        let sumaEvalPct = 0;
+        evals.forEach(e => { const p = parseFloat(e.porcentaje); if (!isNaN(p)) sumaEvalPct += p; });
+        const sumaOk = Math.abs(sumaEvalPct - 100) < 0.01;
+        const sumaColor = sumaOk ? '#1e7b4c' : '#b22234';
+        const incompleto = !sumaOk && evals.length > 0;
+        const claseIncompleto = incompleto ? 'incompleto' : '';
+
+        html += `<div class="component-card ${claseIncompleto}" data-component="${key}">
+            <div class="flex-between">
+                <h3>${nombres[key]} <span style="font-weight:400;font-size:0.8rem;color:#5a6a7a;">(${pct}%)</span></h3>
+                <span class="badge">Parcial: ${parcial !== null ? parcial.toFixed(2) : '—'}</span>
+            </div>
+            <div id="evalList_${key}">`;
+        if (evals.length === 0) html += `<p style="color:#8899aa;font-size:0.9rem;">Sin evaluaciones</p>`;
+        else {
+            evals.forEach((e, idx) => {
+                html += `<div class="eval-item" data-index="${idx}">
+                    <input type="text" placeholder="Nombre" value="${e.nombre || ''}" class="eval-nombre" style="flex:1.5;" />
+                    <input type="number" placeholder="Nota" step="0.1" min="0" max="10" value="${e.nota || ''}" class="eval-nota" style="flex:0.8;min-width:60px;" />
+                    <div class="input-group porcentaje-sufijo" style="flex:0.8;min-width:70px;">
+                        <input type="number" placeholder="%" step="0.1" min="0" max="100" value="${e.porcentaje || ''}" class="eval-porcentaje" />
+                        <span class="suffix">%</span>
+                    </div>
+                    <button class="btn btn-danger btn-eliminar-eval" style="flex-shrink:0;">✕</button>
+                </div>`;
+            });
+        }
+        html += `<button class="btn btn-secondary btn-sm btn-agregar-eval" data-component="${key}" style="margin-top:6px;">+ Agregar</button>
+            </div>
+            <div class="suma-eval-pct">Total : <span style="color:${sumaColor};">${sumaEvalPct.toFixed(1)}%</span>
+            ${incompleto ? ' (faltan)' : ''}
+            </div>
+            </div>`;
+    }
+    componentsContainer.innerHTML = html;
+
+    // Eventos
+    document.querySelectorAll('.btn-agregar-eval').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const comp = this.dataset.component;
+            config.evaluaciones[comp].push({ nombre: '', nota: '', porcentaje: '' });
+            guardarRamoActual();
+            renderizarEvaluaciones();
+            actualizarResumen();
+            mostrarSeccionExamen();
+        });
+    });
+    document.querySelectorAll('.btn-eliminar-eval').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const item = this.closest('.eval-item');
+            const comp = item.closest('.component-card').dataset.component;
+            const idx = parseInt(item.dataset.index);
+            config.evaluaciones[comp].splice(idx, 1);
+            guardarRamoActual();
+            renderizarEvaluaciones();
+            actualizarResumen();
+            mostrarSeccionExamen();
+        });
+    });
+    document.querySelectorAll('.eval-item input').forEach(input => {
+        input.addEventListener('change', function() {
+            const item = this.closest('.eval-item');
+            const comp = item.closest('.component-card').dataset.component;
+            const idx = parseInt(item.dataset.index);
+            const nombre = item.querySelector('.eval-nombre').value;
+            const nota = parseFloat(item.querySelector('.eval-nota').value);
+            const porcentaje = parseFloat(item.querySelector('.eval-porcentaje').value);
+            config.evaluaciones[comp][idx] = { nombre, nota: isNaN(nota) ? '' : nota, porcentaje: isNaN(porcentaje) ? '' : porcentaje };
+            guardarRamoActual();
+            actualizarResumen();
+            mostrarSeccionExamen();
+            // Actualizar badge y suma de %
+            const card = item.closest('.component-card');
+            const parcial = calcularParcial(comp);
+            const badge = card.querySelector('.badge');
+            if (badge) badge.textContent = `Parcial: ${parcial !== null ? parcial.toFixed(2) : '—'}`;
+            const evals = config.evaluaciones[comp];
+            let suma = 0;
+            evals.forEach(e => { const p = parseFloat(e.porcentaje); if (!isNaN(p)) suma += p; });
+            const ok = Math.abs(suma - 100) < 0.01;
+            const color = ok ? '#1e7b4c' : '#b22234';
+            const sumaSpan = card.querySelector('.suma-eval-pct span');
+            if (sumaSpan) { sumaSpan.textContent = suma.toFixed(1) + '%'; sumaSpan.style.color = color; }
+            const incompleto = !ok && evals.length > 0;
+            card.classList.toggle('incompleto', incompleto);
+            const advertencia = card.querySelector('.suma-eval-pct');
+            if (advertencia) {
+                const msg = advertencia.textContent.replace(/ \(faltan %\)$/, '');
+                advertencia.textContent = msg + (incompleto ? ' (faltan %)' : '');
+            }
+        });
+    });
+
+    // Evento para nota examen
+    notaExamenInput.addEventListener('change', function() {
+        const val = parseFloat(this.value);
+        config.notaExamen = isNaN(val) ? null : val;
+        guardarRamoActual();
+        actualizarResumen();
+        actualizarInfoExamen();
+    });
+}
+
+// ---- Calcular parcial de un componente ----
+function calcularParcial(comp) {
+    const evals = config.evaluaciones[comp] || [];
+    if (!evals.length) return null;
+    let sumaPond = 0, sumaPct = 0;
+    for (const e of evals) {
+        const n = parseFloat(e.nota), p = parseFloat(e.porcentaje);
+        if (!isNaN(n) && !isNaN(p) && p > 0) { sumaPond += n * p; sumaPct += p; }
+    }
+    if (sumaPct === 0) return null;
+    return (sumaPond / sumaPct);
+}
+
+// ---- Actualizar información de examen ----
+function actualizarInfoExamen() {
+    const notaComp = calcularNotaComponentes();
+    if (notaComp === null) {
+        examenSection.classList.add('hidden');
+        return;
+    }
+    examenSection.classList.remove('hidden');
+    notaComponentesActual.textContent = notaComp.toFixed(2);
+
+    const notaAprob = config.notaAprobacion || 5.5;
+    const notaMinExamen = config.notaMinimaExamen || 4.0;
+
+    if (notaComp >= notaAprob) {
+        notaNecesariaExamen.textContent = 'No aplica (ya aprobado)';
+        notaNecesariaExamen.style.color = '#1e7b4c';
+        examenEstado.textContent = 'Aprobado sin examen';
+        examenEstado.style.color = '#1e7b4c';
+        examenResultado.textContent = '';
+        notaExamenInput.disabled = false;
+    } else {
+        const necesaria = (notaMinExamen - notaComp * 0.7) / 0.3;
+        if (necesaria > 7) {
+            notaNecesariaExamen.textContent = 'Imposible (ni con 7)';
+            notaNecesariaExamen.style.color = '#b22234';
+        } else {
+            const necesariaStr = Math.max(0, necesaria).toFixed(2);
+            notaNecesariaExamen.textContent = necesariaStr;
+            notaNecesariaExamen.style.color = '#b8860b';
+            const notaExamen = parseFloat(notaExamenInput.value);
+            if (!isNaN(notaExamen)) {
+                const notaFinal = notaComp * 0.7 + notaExamen * 0.3;
+                if (notaFinal >= notaMinExamen) {
+                    examenResultado.innerHTML = `<span class="texto-aprobado">Apruebas con examen (${notaFinal.toFixed(2)})</span>`;
+                    examenEstado.textContent = 'Aprobado con examen';
+                    examenEstado.style.color = '#1e7b4c';
+                } else {
+                    examenResultado.innerHTML = `<span class="texto-reprobado">Repruebas con examen (${notaFinal.toFixed(2)})</span>`;
+                    examenEstado.textContent = 'Reprobado con examen';
+                    examenEstado.style.color = '#b22234';
+                }
+            } else {
+                examenResultado.textContent = 'Ingresa tu nota de examen';
+                examenResultado.style.color = '#6b7a8f';
+                examenEstado.textContent = 'Pendiente examen';
+                examenEstado.style.color = '#b8860b';
+            }
+        }
+    }
+}
+
+// ---- Actualizar resumen ----
+function actualizarResumen() {
+    let html = '';
+    const comps = ['catedra', 'laboratorio', 'terreno'];
+    const nombres = { catedra: 'Cátedra', laboratorio: 'Laboratorio', terreno: 'Terreno' };
+    const notaComp = calcularNotaComponentes();
+
+    if (notaComp === null) {
+        html = '<p style="color:#8899aa;">Sin evaluaciones en componentes</p>';
+        notaFinalSpan.textContent = '-';
+        notaFinalSpan.className = 'nota-final';
+        estadoIndicador.textContent = '';
+        resumenDetalle.innerHTML = html;
+        return;
+    }
+
+    for (const key of comps) {
+        if (!config.componentes[key].activo) continue;
+        const parcial = calcularParcial(key);
+        const pct = config.componentes[key].porcentaje;
+        if (parcial !== null) {
+            const aporte = parcial * (pct / 100);
+            html += `<p><strong>${nombres[key]}</strong> ${parcial.toFixed(2)} (aporte ${aporte.toFixed(2)})</p>`;
+        } else {
+            html += `<p><strong>${nombres[key]}</strong> sin notas (${pct}%)</p>`;
+        }
+    }
+    html += `<p><strong>Nota ponderada de componentes:</strong> ${notaComp.toFixed(2)}</p>`;
+
+    const notaAprob = config.notaAprobacion || 5.5;
+    const notaMinExamen = config.notaMinimaExamen || 4.0;
+    let notaFinal = null;
+    let estado = '';
+
+    if (notaComp >= notaAprob) {
+        notaFinal = notaComp;
+        estado = 'Aprobado (sin examen)';
+        html += `<p style="color:#1e7b4c;font-weight:bold;">${estado}</p>`;
+        notaFinalSpan.textContent = notaFinal.toFixed(2);
+        notaFinalSpan.className = 'nota-final aprobado';
+        estadoIndicador.textContent = '';
+    } else {
+        const notaExamen = parseFloat(notaExamenInput.value);
+        if (!isNaN(notaExamen)) {
+            notaFinal = notaComp * 0.7 + notaExamen * 0.3;
+            if (notaFinal >= notaMinExamen) {
+                estado = 'Aprobado con examen';
+                html += `<p style="color:#1e7b4c;font-weight:bold;">${estado} (${notaFinal.toFixed(2)})</p>`;
+                notaFinalSpan.textContent = notaFinal.toFixed(2);
+                notaFinalSpan.className = 'nota-final aprobado';
+                estadoIndicador.textContent = '';
+            } else {
+                estado = 'Reprobado con examen';
+                html += `<p style="color:#b22234;font-weight:bold;">${estado} (${notaFinal.toFixed(2)})</p>`;
+                notaFinalSpan.textContent = notaFinal.toFixed(2);
+                notaFinalSpan.className = 'nota-final reprobado';
+                estadoIndicador.textContent = '';
+            }
+        } else {
+            const necesaria = (notaMinExamen - notaComp * 0.7) / 0.3;
+            if (necesaria > 7) {
+                html += `<p style="color:#b22234;font-weight:bold;">Imposible aprobar (necesitas ${Math.max(0, necesaria).toFixed(2)} en examen, supera 10)</p>`;
+                estadoIndicador.textContent = '';
+                notaFinalSpan.textContent = '-';
+                notaFinalSpan.className = 'nota-final reprobado';
+            } else {
+                html += `<p><span class="nota-necesaria">Necesitas ${Math.max(0, necesaria).toFixed(2)} en el examen para alcanzar ${notaMinExamen}</span></p>`;
+                html += `<p style="color:#b8860b;">Pendiente examen</p>`;
+                estadoIndicador.textContent = '';
+                notaFinalSpan.textContent = '-';
+                notaFinalSpan.className = 'nota-final';
+            }
+        }
+    }
+
+    resumenDetalle.innerHTML = html;
+    actualizarInfoExamen();
+}
+
+// ---- Limpiar datos ----
+btnLimpiarDatos.addEventListener('click', function() {
+    if (confirm('¿Eliminar todas las evaluaciones de este ramo?')) {
+        config.evaluaciones = { catedra: [], laboratorio: [], terreno: [] };
+        config.notaExamen = null;
+        guardarRamoActual();
+        renderizarEvaluaciones();
+        actualizarResumen();
+        notaExamenInput.value = '';
+        mostrarSeccionExamen();
+    }
+});
+
+// ---- Inicialización ----
+cargarListaRamos();
+actualizarVisibilidad();
+actualizarSumaYValidar();
+if (!config.evaluaciones.catedra.length && !config.evaluaciones.laboratorio.length && !config.evaluaciones.terreno.length) {
+    step1.classList.add('active');
+    step2.classList.remove('active');
+}
+</script>
+</body>
+</html>
